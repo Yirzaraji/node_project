@@ -20,6 +20,13 @@ const bootServer = async () => {
     console.log(`request finished in ${new Date() - timer}ms`);
   });
 
+  //Show all products
+  app.get("/product", async (req, res, next) => {
+    const allProducts = await ProductService.readAllProduct();
+    res.send(allProducts);
+  });
+
+  //Create
   app.post("/product", async (req, res, next) => {
     const { name, priceWithoutVAT } = req.body;
     if (!name || !priceWithoutVAT) {
@@ -29,26 +36,14 @@ const bootServer = async () => {
     res.sendStatus(201);
   });
 
-  app.post("/product", async (req, res, next) => {
-    const { name, priceWithoutVAT } = req.body;
-    if (!name || !priceWithoutVAT) {
-      res.status(400).send("Product creation require `name, priceWithoutVAT` properties");
-    }
-    await db.Product.create(req.body);
-    res.sendStatus(201);
-  });
-
-  app.get("/product", async (req, res, next) => {
-    const allProducts = await db.Product.findAll();
-    res.send(allProducts);
-  });
-
+  //Read
   app.get("/product/:id", async (req, res, next) => {
     const { id } = req.params;
-    const product = await db.Product.findOne({ where: { id } });
+    const product = await ProductService.readProduct(id);
     res.send(product);
   });
 
+  //Update
   app.put("/product/:id", async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -58,7 +53,7 @@ const bootServer = async () => {
         res.status(400).send("Product update require a valid property to update");
       }
 
-      const result = await db.Product.update(req.body, { where: { id } });
+      const result = await ProductService.updateProduct(req.body, id);
       if (result[0] !== 1) {
         return res.status(404).send("Could not find the Product to update");
       }
@@ -69,9 +64,10 @@ const bootServer = async () => {
     }
   });
 
+  //Delete
   app.delete("/product/:id", async (req, res, next) => {
     const { id } = req.params;
-    const rowDeleted = await db.Product.destroy({ where: { id } });
+    const rowDeleted = await ProductService.deleteProduct(id);
     if (rowDeleted !== 1) {
       res.status(404).send("Product has not been found");
     }
